@@ -1,0 +1,97 @@
+#!/bin/sh
+# river-classic init: Gyro theme
+
+mod="Mod4"
+export XDG_CURRENT_DESKTOP=river
+dbus-update-activation-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=river 2>/dev/null &
+
+# apps
+riverctl map normal $mod Return spawn foot
+riverctl map normal $mod D spawn fuzzel
+riverctl map normal $mod Q close
+riverctl map normal $mod+Shift E spawn "$HOME/.config/river/power.sh"
+riverctl map normal $mod+Shift F spawn "foot -e yazi"
+riverctl map normal $mod+Shift B spawn qutebrowser
+riverctl map normal $mod+Shift S spawn 'grim -g "$(slurp)" - | wl-copy'
+
+# focus with arrows (hjkl as backup)
+riverctl map normal $mod Left focus-view left
+riverctl map normal $mod Right focus-view right
+riverctl map normal $mod Up focus-view up
+riverctl map normal $mod Down focus-view down
+riverctl map normal $mod H focus-view left
+riverctl map normal $mod L focus-view right
+riverctl map normal $mod K focus-view up
+riverctl map normal $mod J focus-view down
+
+# swap windows
+riverctl map normal $mod+Shift Left swap left
+riverctl map normal $mod+Shift Right swap right
+riverctl map normal $mod+Shift Up swap up
+riverctl map normal $mod+Shift Down swap down
+riverctl map normal $mod+Shift H swap left
+riverctl map normal $mod+Shift L swap right
+riverctl map normal $mod+Shift K swap up
+riverctl map normal $mod+Shift J swap down
+riverctl map normal $mod+Shift Return zoom
+
+# layout: main pane size and count
+riverctl map normal $mod+Control Left send-layout-cmd rivertile "main-ratio -0.05"
+riverctl map normal $mod+Control Right send-layout-cmd rivertile "main-ratio +0.05"
+riverctl map normal $mod+Control Up send-layout-cmd rivertile "main-count +1"
+riverctl map normal $mod+Control Down send-layout-cmd rivertile "main-count -1"
+
+# layout: main pane position (Alt+arrows)
+riverctl map normal $mod+Mod1 Up send-layout-cmd rivertile "main-location top"
+riverctl map normal $mod+Mod1 Down send-layout-cmd rivertile "main-location bottom"
+riverctl map normal $mod+Mod1 Left send-layout-cmd rivertile "main-location left"
+riverctl map normal $mod+Mod1 Right send-layout-cmd rivertile "main-location right"
+
+# window state
+riverctl map normal $mod F toggle-fullscreen
+riverctl map normal $mod Space toggle-float
+
+# tags (workspaces)
+for i in 1 2 3 4 5 6 7 8 9; do
+tags=$((1 << (i - 1)))
+riverctl map normal $mod $i set-focused-tags $tags
+riverctl map normal $mod+Shift $i set-view-tags $tags
+done
+riverctl map normal $mod 0 set-focused-tags $(((1 << 32) - 1))
+riverctl map normal $mod Tab focus-previous-tags
+
+# mouse
+riverctl map-pointer normal $mod BTN_LEFT move-view
+riverctl map-pointer normal $mod BTN_RIGHT resize-view
+
+# media keys
+for mode in normal locked; do
+riverctl map $mode None XF86AudioRaiseVolume spawn 'wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+'
+riverctl map $mode None XF86AudioLowerVolume spawn 'wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-'
+riverctl map $mode None XF86AudioMute spawn 'wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle'
+done
+
+# look
+riverctl background-color 0x1a1424
+riverctl border-color-focused 0xe0b94a
+riverctl border-color-unfocused 0x5f4f73
+riverctl border-width 2
+riverctl set-repeat 50 300
+riverctl focus-follows-cursor normal
+
+# trackpad
+riverctl list-inputs | grep -iE "touchpad|trackpad" | while read -r pad; do
+riverctl input "$pad" events enabled
+riverctl input "$pad" tap enabled
+riverctl input "$pad" natural-scroll enabled
+done
+
+# startup (everything backgrounded so nothing blocks)
+wlr-randr --output eDP-1 --scale 1.62 &
+wall="$HOME/wall.jpg"
+[ -f "$wall" ] || wall="$HOME/Downloads/Wallpaper Alchemy - Gyro Zeppeli Steel Ball Run 4K Wallpaper"
+swaybg -i "$wall" -m fill &
+mako &
+yambar 2>/dev/null &
+riverctl default-layout rivertile
+rivertile -view-padding 4 -outer-padding 4 -main-ratio 0.55 &
